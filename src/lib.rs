@@ -1,3 +1,9 @@
+macro_rules! circular_increment {
+    ($value:expr, $max:expr) => {
+        $value = ($value + 1) % $max;
+    };
+}
+
 
 pub struct RingBuffer<T: Copy> {
     data: Vec<Option<T>>,
@@ -10,7 +16,7 @@ impl <T : Copy> RingBuffer<T> {
         RingBuffer {
             data: vec![None; ring_size],    // ring_size x None
             write_head : 0,
-            read_head :0
+            read_head : 0
         }
     }
 
@@ -21,13 +27,14 @@ impl <T : Copy> RingBuffer<T> {
     /// adds a new element to the ring,
     /// if the ring is full, the oldest element is woverwritten
     pub fn add(&mut self, element: T) {
+        let element_count = self.data.len();
         if self.number_of_elements() == self.data.len(){//buffer full, cycle
             self.data[self.write_head] = Some(element);
-            self.write_head = (self.write_head + 1) % self.data.len();
-            self.read_head = (self.read_head + 1) % self.data.len();
+            circular_increment!(self.write_head, element_count);
+            circular_increment!(self.read_head, element_count);
         }else {
             self.data[self.write_head] = Some(element);
-            self.write_head = (self.write_head + 1) % self.data.len();
+            circular_increment!(self.write_head, element_count);
         }
     }
 
@@ -35,7 +42,7 @@ impl <T : Copy> RingBuffer<T> {
     pub fn remove(&mut self) -> Option<T> {
         if self.number_of_elements() > 0{
             let ret_val = self.data[self.read_head].take();
-            self.read_head = (self.read_head + 1) % self.data.len();
+            circular_increment!(self.read_head, self.data.len());
             ret_val
         }else {
             None
@@ -94,7 +101,7 @@ mod tests {
             buffer.add(i);    
         }
         //then it should return 10
-        for i in (1..11) {
+        for i in 1..11 {
             let ret_val = buffer.remove();
             println!("expected {}, was {:?}", i , ret_val);
             assert_eq!(ret_val, Some(i)); //Why has this to be some of...? 
@@ -118,52 +125,16 @@ mod tests {
         for i in 1..11 {
             buffer.add(i);    
         }
-        //when removing an element and adding another
-            //then the oldest value should always be returned
-           
-    }
-
-    #[test]
-    fn it_should_overwrite_the_last_element_when_buffer_is_full() {
-        //Given an fully filled  buffer
-        let mut buffer: RingBuffer<i32> = RingBuffer::<i32>::new(10);
-        for i in 1..11 {
+        //when adding another 5 elements
+        for i in 11..16 {
             buffer.add(i);    
         }
-        //when adding another element
-        buffer.add(11); 
-        //then the oldest value shouldbe overwritten 
-        let ret_val = buffer.remove();
-        assert_eq!(ret_val, Some(2));
-        buffer.add(11); 
-        //then the oldest value shouldbe overwritten 
-        let ret_val = buffer.remove();
-        assert_eq!(ret_val, Some(3));
-        buffer.add(11); 
-        //then the oldest value shouldbe overwritten 
-        let ret_val = buffer.remove();
-        assert_eq!(ret_val, Some(4));
-        buffer.add(11); 
-        //then the oldest value shouldbe overwritten 
-        let ret_val = buffer.remove();
-        assert_eq!(ret_val, Some(5));
-        buffer.add(11); 
-        //then the oldest value shouldbe overwritten 
-        let ret_val = buffer.remove();
-        assert_eq!(ret_val, Some(6));
-        buffer.add(11); 
-        //then the oldest value shouldbe overwritten 
-        let ret_val = buffer.remove();
-        assert_eq!(ret_val, Some(7));
-        buffer.add(11); 
-        //then the oldest value shouldbe overwritten 
-        let ret_val = buffer.remove();
-        assert_eq!(ret_val, Some(8));
-        buffer.add(11); 
-        //then the oldest value shouldbe overwritten 
-        let ret_val = buffer.remove();
-        assert_eq!(ret_val, Some(9));
-
+        //then the oldest value should always be returned
+        for i in 6..16 {
+            let ret_val = buffer.remove();
+            println!("expected{}, was {:?}", i, ret_val);
+            assert_eq!(ret_val, Some(i));    
+        }
     }
 }
 
