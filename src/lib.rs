@@ -4,7 +4,6 @@ macro_rules! circular_increment {
     };
 }
 
-
 pub struct RingBuffer<T: Copy> {
     data: Vec<Option<T>>,
     write_head : usize,
@@ -49,7 +48,6 @@ impl <T : Copy> RingBuffer<T> {
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -137,5 +135,3 @@ mod tests {
         }
     }
 }
-
-
